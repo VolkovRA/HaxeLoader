@@ -1,0 +1,11 @@
+{
+    "name": "loader",
+    "url": "https://github.com/VolkovRA/HaxeLoader/blob/master/README.md",
+    "license": "MIT",
+    "tags": ["web", "ajax", "http", "https", "url", "request", "nodejs"],
+    "description": "HTTP/S Client for nodejs and browser",
+    "version": "1.0.0",
+    "releasenote": "Release",
+    "contributors": ["VolkovRA"],
+    "classPath": "lib"
+}
