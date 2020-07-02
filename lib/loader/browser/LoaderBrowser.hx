@@ -5,11 +5,12 @@ import js.lib.Error;
 import js.html.ProgressEvent;
 import js.html.XMLHttpRequest;
 import js.html.XMLHttpRequestResponseType;
-import loader.Loader;
-import loader.Request;
-import loader.Header;
 import loader.DataFormat;
+import loader.Loader;
+import loader.LoaderState;
+import loader.Header;
 import loader.Method;
+import loader.Request;
 
 /**
  * Реализация загрузчика для браузера.
@@ -17,76 +18,92 @@ import loader.Method;
  */
 class LoaderBrowser implements Loader
 {
-    public var bytesLoaded(default, null):Int;
-    public var bytesTotal(default, null):Int;
-    public var data(default, null):Dynamic;
-    public var status(default, null):Int;
-    public var dataFormat:DataFormat;
-    public var error:Error;
-    public var onComplete:Loader->Void;
-    public var onResponse:Loader->Void;
-    public var onProgress:Loader->Void;
+    public var status(default, null):Int        = 0;
+    public var bytesTotal(default, null):Int    = 0;
+    public var bytesLoaded(default, null):Int   = 0;
+    public var priority:Int                     = 0;
+    public var state(default, null):LoaderState = LoaderState.READY;
+    public var dataFormat:DataFormat            = DataFormat.TEXT;
+    public var balancer(default, set):Balancer  = null;
+    public var data(default, null):Dynamic      = null;
+    public var error:Error                      = null;
+    public var onComplete:Loader->Void          = null;
+    public var onResponse:Loader->Void          = null;
+    public var onProgress:Loader->Void          = null;
 
-    private var xhr:XMLHttpRequest;
+    // Приват:
+    private var xhr:XMLHttpRequest              = null;
+    private var req:Request                     = null;
 
     /**
      * Создать загрузчик.
      */
     public function new() {
-        bytesLoaded     = 0;
-        bytesTotal      = 0;
-        status          = 0;
-        dataFormat      = DataFormat.TEXT;
-        data            = null;
-        error           = null;
-        onComplete      = null;
-        onResponse      = null;
-        onProgress      = null;
-        xhr             = null;
     }
 
     // ПАБЛИК
     public function load(request:Request):Void {
-        
-        // Удаляем предыдущий объект: (Если есть)
-        removeXHR();
 
-        // Сброс:
-        bytesLoaded     = 0;
-        bytesTotal      = 0;
-        status          = 0;
-        data            = null;
-        error           = null;
-        xhr             = Browser.createXMLHttpRequest();
+        // Новый запрос
+        // Объект в изначальное состояние: (Без изменения настроек)
+        if (Utils.noeq(state, LoaderState.READY)) {
+            close();
+
+            status          = 0;
+            bytesTotal      = 0;
+            bytesLoaded     = 0;
+            //state         = LoaderState.READY; // <-- Не имеет эффекта
+            data            = null;
+            error           = null;
+        }
 
         // Должен быть указан объект запроса:
         if (request == null) {
             error = new Error("Параметры запроса Request - не должны быть null");
+            state = LoaderState.COMPLETE;
             if (onComplete != null)
                 onComplete(this);
+
             return;
         }
-
-        // Тип запроса:
-        if (Utils.eq(request.method, Method.GET)) {
-            if (request.data == null)
-                xhr.open(Method.GET, Utils.encodeURI(request.url), true);
-            else
-                xhr.open(Method.GET, Utils.encodeURI(request.url + "?" + request.data), true);
-        }
-        else if (Utils.eq(request.method, Method.POST)) {
-            xhr.open(Method.POST, Utils.encodeURI(request.url), true);
+        
+        // Отложенный вызов:
+        req = request;
+        if (balancer == null) {
+            loadStart();
         }
         else {
-            error = new Error("Неподдерживаемый тип HTTP запроса=" + request.method);
+            state = LoaderState.PENDING;
+            balancer.add(this); //<-- Балансер сам вызовет: Loader.loadStart()
+        }
+    }
+
+    private function loadStart():Void {
+        state   = LoaderState.LOAD;
+        xhr     = Browser.createXMLHttpRequest();
+        
+        // Тип запроса:
+        if (Utils.eq(req.method, Method.GET)) {
+            if (req.data == null)
+                xhr.open(Method.GET, Utils.encodeURI(req.url), true);
+            else
+                xhr.open(Method.GET, Utils.encodeURI(req.url + "?" + Utils.str(req.data)), true);
+        }
+        else if (Utils.eq(req.method, Method.POST)) {
+            xhr.open(Method.POST, Utils.encodeURI(req.url), true);
+        }
+        else {
+            close();
+            error = new Error("Неподдерживаемый тип HTTP запроса=" + req.method);
             if (onComplete != null)
                 onComplete(this);
+
             return;
         }
 
         // Заголовки:
-        if (request.headers != null) {
-            for (header in request.headers)
+        if (req.headers != null) {
+            for (header in req.headers)
                 xhr.setRequestHeader(header.name, header.value);
         }
 
@@ -98,15 +115,16 @@ class LoaderBrowser implements Loader
         else if (Utils.eq(dataFormat, DataFormat.JSON))
             xhr.responseType = XMLHttpRequestResponseType.JSON;
         else {
+            close();
             error = new Error("Неподдерживаемый тип загружаемых данных=" + dataFormat);
-            removeXHR();
             if (onComplete != null)
                 onComplete(this);
+
             return;
         }
 
         // Настройка:
-        xhr.timeout             = request.timeout;
+        xhr.timeout             = req.timeout;
         xhr.onreadystatechange  = onXhrReadyStateChange;
         xhr.onabort             = onXhrAbort;
         xhr.ontimeout           = onXhrTimeout;
@@ -115,15 +133,64 @@ class LoaderBrowser implements Loader
         xhr.onloadend           = onXhrLoadEnd;
 
         // Запрос: Если метод запроса GET или HEAD, то аргументы игнорируются и тело запроса устанавливается в null. (Справка)
-        xhr.send(request.data);
+        xhr.send(req.data);
+        req = null;
+    }
+
+    function set_balancer(value:Balancer):Balancer {
+        if (Utils.eq(value, balancer))
+            return value;
+        
+        close();
+        balancer = value;
+        return value;
     }
 
     public function close():Void {
-        removeXHR();
+        if (Utils.eq(state, LoaderState.COMPLETE))
+            return;
+        if (Utils.eq(state, LoaderState.PENDING) && balancer != null)
+            balancer.remove(this);
+        if (Utils.noeq(xhr, null)) {
+            xhr.onreadystatechange  = null;
+            xhr.onabort             = null;
+            xhr.ontimeout           = null;
+            xhr.onerror             = null;
+            xhr.onprogress          = null;
+            xhr.onloadend           = null;
+            
+            try {
+                xhr.abort(); // <-- Тихо потушили
+            }
+            catch (err:Error) {
+            }
+            
+            xhr = null;
+        }
+
+        state   = LoaderState.COMPLETE;
+        req     = null;
+    }
+
+    public function purge():Void {
+        close();
+
+        status          = 0;
+        bytesTotal      = 0;
+        bytesLoaded     = 0;
+        priority        = 0;
+        state           = LoaderState.READY;
+        dataFormat      = DataFormat.TEXT;
+        balancer        = null;
+        data            = null;
+        error           = null;
+        onComplete      = null;
+        onResponse      = null;
+        onProgress      = null;
     }
 
     public function getHeaders():Array<Header> {
-        if (xhr == null)
+        if (Utils.eq(xhr, null))
             return null;
 
         var str = xhr.getAllResponseHeaders();
@@ -131,43 +198,25 @@ class LoaderBrowser implements Loader
             return null;
 
         var arr = str.split("\r\n");
-        if (arr.length == 0)
+        if (Utils.eq(arr.length, 0))
             return null;
 
         var res = new Array<Header>();
         for (item in arr) {
             var arr2 = item.split(": ");
             if (arr2.length >= 2)
-                res.push({name:arr2[0], value:arr2[1] });
+                res.push({ name:arr2[0], value:arr2[1] });
         }
 
-        if (res.length == 0)
+        if (Utils.eq(res.length, 0))
             return null;
 
         return res;
     }
 
-    /**
-     * Удалить объект **XMLHTTPRequest**.
-     * Прерывает активную загрузку, если такая выполняется.
-     */
-    private function removeXHR():Void {
-        if (xhr != null) {
-            xhr.onreadystatechange = null;
-            xhr.onabort = null;
-            xhr.ontimeout = null;
-            xhr.onerror = null;
-            xhr.onprogress = null;
-            xhr.onloadend = null;
-            
-            try {
-                xhr.abort();
-            }
-            catch (err:Error) {
-            }
-
-            xhr = null;
-        }
+    @:keep
+    public function toString():String {
+        return "[LoaderBrowser status=" + status + " bytesLoaded=" + bytesLoaded + " bytesTotal=" + bytesTotal + "]";
     }
 
     // ЛИСТЕНЕРЫ
@@ -180,29 +229,48 @@ class LoaderBrowser implements Loader
     }
 
     private function onXhrAbort():Void {
+        var c = Utils.eq(state, LoaderState.LOAD);
         error = new Error("Запрос отменён");
+
+        close();
+        if (c && onComplete != null)
+            onComplete(this);
     }
 
     private function onXhrTimeout():Void {
+        var c = Utils.eq(state, LoaderState.LOAD);
         error = new Error("Таймаут выполнения запроса");
+
+        close();
+        if (c && onComplete != null)
+            onComplete(this);
     }
 
     private function onXhrError(e:ProgressEvent):Void {
+        var c = Utils.eq(state, LoaderState.LOAD);
         error = new Error("Ошибка выполнения запроса");
+
+        close();
+        if (c && onComplete != null)
+            onComplete(this);
     }
 
     private function onXhrProgress(e:ProgressEvent):Void {
-        bytesLoaded = e.loaded;
-        bytesTotal = e.total;
+        bytesLoaded     = e.loaded;
+        bytesTotal      = e.total;
+
         if (onProgress != null)
             onProgress(this);
     }
 
     private function onXhrLoadEnd():Void {
+        var c = Utils.eq(state, LoaderState.LOAD);
         data = xhr.response;
         if (status >= 400)
             error = new Error(xhr.responseURL + " replied " + status);
-        if (onComplete != null)
+
+        close();
+        if (c && onComplete != null)
             onComplete(this);
     }
 }

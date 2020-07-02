@@ -1,5 +1,6 @@
 package;
 
+import loader.Balancer;
 import loader.Loader;
 import loader.Request;
 #if nodejs
@@ -19,16 +20,30 @@ class Main
      * Точка входа.
      */
     public static function main() {
+        var balancer = new Balancer();
+        balancer.rps = 1;
+
+        var url:String = "http://google.com";
+        var len:Int = 10;
+
         #if nodejs
         // Тест в NodeJS:
-        var loader:Loader = new LoaderNodeJS();
-        loader.load(new Request("https://google.com"));
-        loader.onComplete = function(loader){ trace(loader.error); trace(loader.data); };
+        while (len-- > 0) {
+            var loader:Loader = new LoaderNodeJS();
+            loader.balancer = balancer;
+            //loader.priority = len;
+            loader.onComplete = function(loader){ trace(balancer.length, loader.error, loader.data); };
+            loader.load(new Request(url));
+        }
         #else
         // Тест в браузере:
-        var loader:Loader = new LoaderBrowser();
-        loader.load(new Request("https://127.0.0.1:8080/time"));
-        loader.onComplete = function(loader){ trace(loader.error); trace(loader.data); };
+        while (len-- > 0) {
+            var loader:Loader = new LoaderBrowser();
+            loader.balancer = balancer;
+            //loader.priority = len;
+            loader.onComplete = function(loader){ trace(balancer.length, loader.error, loader.data); };
+            loader.load(new Request(url));
+        }
         #end
     }
 }

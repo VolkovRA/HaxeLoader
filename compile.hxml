@@ -1,7 +1,10 @@
--lib hxnodejs 
+# Закомментировать строку снизу, чтобы скомпилировать под браузер!
+#-lib hxnodejs  
+
 --class-path lib 
 --class-path src 
 -main Main
 -js "bin/index.js"
 -dce full
+
 #-debug

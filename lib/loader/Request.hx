@@ -79,4 +79,13 @@ class Request
      * По умолчанию: `true`
      */
     public var followRedirects:Bool;
+
+    /**
+     * Получить строковое представление запроса.
+     * @return Возвращает строковое представление объекта.
+     */
+    @:keep
+    public function toString():String {
+        return "[Request method=" + method + " url=" + url + "]";
+    }
 }
