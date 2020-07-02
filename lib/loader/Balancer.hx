@@ -29,8 +29,10 @@ class Balancer
 
     /**
      * Создать балансировщик.
+     * @param rps Ограничение частоты запросов. (Request per second)
      */
-    public function new() {
+    public function new(rps:Float = 1) {
+        this.rps = rps;
     }
 
     /**
@@ -40,7 +42,7 @@ class Balancer
      * 
      * По умолчанию: `1` (Один запрос в секунду)
      */
-    public var rps(default, set):Float = 1;
+    public var rps(default, set):Float;
     function set_rps(value:Float):Float {
         if (value > 0) {
             if (Utils.eq(value, rps))
