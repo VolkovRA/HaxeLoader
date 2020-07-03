@@ -1,4 +1,4 @@
-package loader.browser;
+package loader.xhr;
 
 import js.Browser;
 import js.lib.Error;
@@ -6,17 +6,17 @@ import js.html.ProgressEvent;
 import js.html.XMLHttpRequest;
 import js.html.XMLHttpRequestResponseType;
 import loader.DataFormat;
-import loader.Loader;
+import loader.ILoader;
 import loader.LoaderState;
 import loader.Header;
 import loader.Method;
 import loader.Request;
 
 /**
- * Реализация загрузчика для браузера.
- * Поддерживаются http и https запросы.
+ * Реализация загрузчика на основе браузерного: `XmlHttpRequest`.
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
  */
-class LoaderBrowser implements Loader
+class LoaderXHR implements ILoader
 {
     public var status(default, null):Int        = 0;
     public var bytesTotal(default, null):Int    = 0;
@@ -27,9 +27,9 @@ class LoaderBrowser implements Loader
     public var balancer(default, set):Balancer  = null;
     public var data(default, null):Dynamic      = null;
     public var error:Error                      = null;
-    public var onComplete:Loader->Void          = null;
-    public var onResponse:Loader->Void          = null;
-    public var onProgress:Loader->Void          = null;
+    public var onComplete:ILoader->Void         = null;
+    public var onResponse:ILoader->Void         = null;
+    public var onProgress:ILoader->Void         = null;
 
     // Приват:
     private var xhr:XMLHttpRequest              = null;
@@ -59,7 +59,7 @@ class LoaderBrowser implements Loader
 
         // Должен быть указан объект запроса:
         if (request == null) {
-            error = new Error("Параметры запроса Request - не должны быть null");
+            error = new Error("The Request parameters cannot be null");
             state = LoaderState.COMPLETE;
             if (onComplete != null)
                 onComplete(this);
@@ -94,7 +94,7 @@ class LoaderBrowser implements Loader
         }
         else {
             close();
-            error = new Error("Неподдерживаемый тип HTTP запроса=" + req.method);
+            error = new Error("Unsupported request method of XHR loader: " + req.method);
             if (onComplete != null)
                 onComplete(this);
 
@@ -116,7 +116,7 @@ class LoaderBrowser implements Loader
             xhr.responseType = XMLHttpRequestResponseType.JSON;
         else {
             close();
-            error = new Error("Неподдерживаемый тип загружаемых данных=" + dataFormat);
+            error = new Error("Unsupported dataFormat: " + dataFormat);
             if (onComplete != null)
                 onComplete(this);
 
@@ -216,7 +216,7 @@ class LoaderBrowser implements Loader
 
     @:keep
     public function toString():String {
-        return "[LoaderBrowser status=" + status + " bytesLoaded=" + bytesLoaded + " bytesTotal=" + bytesTotal + "]";
+        return "[LoaderXHR status=" + status + " bytesLoaded=" + bytesLoaded + " bytesTotal=" + bytesTotal + "]";
     }
 
     // ЛИСТЕНЕРЫ
@@ -230,7 +230,7 @@ class LoaderBrowser implements Loader
 
     private function onXhrAbort():Void {
         var c = Utils.eq(state, LoaderState.LOAD);
-        error = new Error("Запрос отменён");
+        error = new Error("Request has been canceled");
 
         close();
         if (c && onComplete != null)
@@ -239,7 +239,7 @@ class LoaderBrowser implements Loader
 
     private function onXhrTimeout():Void {
         var c = Utils.eq(state, LoaderState.LOAD);
-        error = new Error("Таймаут выполнения запроса");
+        error = new Error("Request is timeout");
 
         close();
         if (c && onComplete != null)
@@ -248,7 +248,7 @@ class LoaderBrowser implements Loader
 
     private function onXhrError(e:ProgressEvent):Void {
         var c = Utils.eq(state, LoaderState.LOAD);
-        error = new Error("Ошибка выполнения запроса");
+        error = new Error("Request error");
 
         close();
         if (c && onComplete != null)

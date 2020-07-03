@@ -1,6 +1,3 @@
-# Закомментировать строку снизу, чтобы скомпилировать под браузер!
-#-lib hxnodejs  
-
 --class-path lib 
 --class-path src 
 -main Main
@@ -8,3 +5,8 @@
 -dce full
 
 #-debug
+
+# Раскоментировать для компиляции соответствующего теста:
+#-lib hxnodejs  
+#-D xhr
+-D jsonp

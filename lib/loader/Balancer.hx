@@ -12,7 +12,7 @@ import loader.Global;
  * 
  * Способ применения:
  * 1. Создать экземпляр `Balancer`, настроить необходимый лимит запросов.
- * 2. Назначить созданный экземпляр `Balancer` каждому загрузчику `Loader`
+ * 2. Назначить созданный экземпляр `Balancer` каждому загрузчику `ILoader`
  *    **до** вызова метода `load()`.
  */
 class Balancer
@@ -23,7 +23,7 @@ class Balancer
     static private inline var INTERVAL_UPDATE:Int = 100;
 
     // Приват
-    private var loaders:Array<Loader> = new Array();
+    private var loaders:Array<ILoader> = new Array();
     private var interval:Dynamic = null;
     private var time:Float = 0;
 
@@ -144,7 +144,7 @@ class Balancer
         b.loaders.sort(compare);
 
         // Забираем из списка отправляемые элементы: (При отправке список может измениться!)
-        var arr:Array<Loader> = Utils.createArray(num);
+        var arr:Array<ILoader> = Utils.createArray(num);
         i = num;
         while (i-- > 0) {
             arr[i] = b.loaders[i];
@@ -159,7 +159,7 @@ class Balancer
         }
     }
 
-    static private function compare(x:Loader, y:Loader):Int {
+    static private function compare(x:ILoader, y:ILoader):Int {
         if (x.priority > y.priority)
             return -1;
         if (x.priority < y.priority)
@@ -243,8 +243,8 @@ class Balancer
      * 
      * @param loader Загрузчик.
      */
-    @:allow(loader.Loader)
-    private function add(loader:Loader):Void {
+    @:allow(loader.ILoader)
+    private function add(loader:ILoader):Void {
         length ++;
         loaders.push(loader);
         
@@ -260,8 +260,8 @@ class Balancer
      * 
      * @param loader Загрузчик.
      */
-    @:allow(loader.Loader)
-    private function remove(loader:Loader):Void {
+    @:allow(loader.ILoader)
+    private function remove(loader:ILoader):Void {
         var i = 0;
         var len = loaders.length;
         while (i < len) {

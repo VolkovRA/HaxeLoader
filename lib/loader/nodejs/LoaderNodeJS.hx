@@ -12,15 +12,15 @@ import haxe.DynamicAccess;
 import loader.DataFormat;
 import loader.Global;
 import loader.Header;
-import loader.Loader;
+import loader.ILoader;
 import loader.Method;
 import loader.Request;
 
 /**
  * Реализация загрузчика для NodeJS.
- * Поддерживаются http и https запросы.
+ * @see https://nodejs.org/api/http.html#http_http_request_url_options_callback
  */
-class LoaderNodeJS implements Loader
+class LoaderNodeJS implements ILoader
 {
     public var status(default, null):Int        = 0;
     public var bytesTotal(default, null):Int    = 0;
@@ -31,9 +31,9 @@ class LoaderNodeJS implements Loader
     public var balancer(default, set):Balancer  = null;
     public var data(default, null):Dynamic      = null;
     public var error:Error                      = null;
-    public var onComplete:Loader->Void          = null;
-    public var onResponse:Loader->Void          = null;
-    public var onProgress:Loader->Void          = null;
+    public var onComplete:ILoader->Void         = null;
+    public var onResponse:ILoader->Void         = null;
+    public var onProgress:ILoader->Void         = null;
 
     // Приват:
     private var headers:Array<Header>           = null;
@@ -66,7 +66,7 @@ class LoaderNodeJS implements Loader
 
         // Должен быть указан объект запроса:
         if (request == null) {
-            error = new Error("Параметры запроса Request - не должны быть null");
+            error = new Error("The Request parameters cannot be null");
             state = LoaderState.COMPLETE;
             if (onComplete != null)
                 onComplete(this);

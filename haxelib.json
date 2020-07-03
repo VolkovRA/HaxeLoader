@@ -4,7 +4,7 @@
     "license": "MIT",
     "tags": ["web", "ajax", "http", "https", "url", "request", "nodejs"],
     "description": "HTTP/S Client for nodejs and browser",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "releasenote": "Release",
     "contributors": ["VolkovRA"],
     "classPath": "lib"

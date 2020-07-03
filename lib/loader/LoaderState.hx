@@ -4,7 +4,7 @@ package loader;
  * Состояние загрузчика.
  * 
  * Перечисление всех состояний, в которых может
- * находиться загрузчик `Loader`.
+ * находиться загрузчик `ILoader`.
  */
 @:enum abstract LoaderState(Int) to Int
 {
