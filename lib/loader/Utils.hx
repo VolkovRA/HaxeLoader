@@ -5,6 +5,7 @@ import js.Syntax;
 /**
  * Вспомогательные утилиты.
  */
+@:dce
 class Utils
 {
     /**
@@ -124,6 +125,6 @@ class Utils
      * @param property Удаляемое свойство.
      */
     public static inline function delete(property:Dynamic):Void {
-        Syntax.code("delete {0};", property);
+        Syntax.code("delete {0}", property);
     }
 }
