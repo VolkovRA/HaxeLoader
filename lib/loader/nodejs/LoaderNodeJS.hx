@@ -34,6 +34,7 @@ class LoaderNodeJS implements ILoader
     public var onComplete:ILoader->Void         = null;
     public var onResponse:ILoader->Void         = null;
     public var onProgress:ILoader->Void         = null;
+    public var userData:Dynamic                 = null;
 
     // Приват:
     private var headers:Array<Header>           = null;
