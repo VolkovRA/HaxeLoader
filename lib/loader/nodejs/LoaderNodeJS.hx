@@ -87,18 +87,69 @@ class LoaderNodeJS implements ILoader
     }
 
     private function loadStart():Void {
-        state   = LoaderState.LOAD;
+        state = LoaderState.LOAD;
 
         // Разное:
-        var url     = new URL(req.url);
+        var url = new URL(req.url);
         var isHttps = url.protocol == "https:";
-        var port    = Utils.parseInt(url.port, 10);
+        var port = Utils.parseInt(url.port, 10);
 
         // Заголовки:
         var sendHeaders:DynamicAccess<String> = new DynamicAccess();
         if (req.headers != null) {
             for (header in req.headers)
                 sendHeaders[header.name.toLowerCase()] = header.value.toLowerCase();
+        }
+
+        // Подготовка тела запроса:
+        var body:Dynamic = null;    // <-- Должно быть строкою ИЛИ буфером!
+        var bodyOK:Bool = false;    // <-- Оригинальное тело данных БЫЛО изменено!
+        if (req.method == Method.GET) {
+            if (req.data != null) {
+                if (Utils.isString(req.data)) {
+                    bodyOK = true;
+                    body = Utils.encodeURI(req.data);
+                }
+                else if (Buffer.isBuffer(req.data)) {
+                    bodyOK = true;
+                    body = Utils.encodeURI(req.data.toString());
+                }
+                else if (Utils.isObject(req.data)) {
+                    bodyOK = true;
+                    body = getBodyXWWW(req.data);
+                }
+                else {
+                    bodyOK = true;
+                    body = Utils.encodeURI(Utils.str(req.data));
+                }
+            }
+        }
+        else {
+            var bodyType:Header = null;
+            if (Utils.isString(req.data)) {
+                bodyOK = false;
+                bodyType = { name:"content-type", value:"text/plain" };
+            }
+            else if (Buffer.isBuffer(req.data)) {
+                bodyOK = false;
+                bodyType = { name:"content-type", value:"application/octet-stream" };
+            }
+            else if (Utils.isObject(req.data)) {
+                bodyOK = true;
+                body = getBodyXWWW(req.data);
+                bodyType = { name:"content-type", value:"application/x-www-form-urlencoded" };
+            }
+            else {
+                bodyOK = true;
+                body = Utils.str(req.data);
+                bodyType = { name:"content-type", value:"text/plain" };
+            }
+
+            // Заголовки: (Если пользователь не передал свои)
+            if (sendHeaders[bodyType.name] == null)
+                sendHeaders[bodyType.name] = bodyType.value;
+            if (sendHeaders["content-length"] == null)
+                sendHeaders["content-length"] = Utils.str(Buffer.byteLength(bodyOK?body:req.data));
         }
 
         // Опций запроса:
@@ -114,7 +165,8 @@ class LoaderNodeJS implements ILoader
 
         // Параметры для GET запроса:
         if (req.method == Method.GET && req.data != null)
-            options.path += "?" + Utils.encodeURI(req.data);
+            options.path += "?" + body; // <-- Не может быть null при этих условиях
+            //options.path += "?" + bodyOK?body:req.data;
 
         // Создаём запрос:
         if (isHttps)
@@ -127,8 +179,8 @@ class LoaderNodeJS implements ILoader
         cr.addListener("close", onRequestClose);
 
         // Отправляем:
-        if (req.method == Method.POST && req.data != null)
-            cr.end(req.data);
+        if (req.method != Method.GET && req.data != null)
+            cr.end(bodyOK?body:req.data);
         else
             cr.end();
         req = null;
@@ -266,5 +318,31 @@ class LoaderNodeJS implements ILoader
     @:keep
     public function toString():String {
         return "[LoaderNodeJS status=" + status + " bytesLoaded=" + bytesLoaded + " bytesTotal=" + bytesTotal + "]";
+    }
+
+    /**
+     * Получить тело запроса в формате: `Content-Type: application/x-www-form-urlencoded`  
+     * На вход ожидается простой объект с перечисляемыми свойствами.  
+     * На выходе формируется содержимое объекта с парами: ключ-значение. (`say=Hi&to=Mom`)
+     * @param obj Объект с данными.
+     * @return Тело отправляемого запроса.
+     * @see Документация: https://developer.mozilla.org/ru/docs/Web/HTTP/Methods/POST
+     */
+    static private function getBodyXWWW(obj:Dynamic):String {
+        var str:String = "";
+        var key:Dynamic = null;
+        var v:Dynamic = null;
+        Syntax.code('for({0} in {1}) {', key, obj); // for in
+            v = obj[key];
+            if (v == null)
+                str += Utils.encodeURI(key) + '&';
+            else
+                str += Utils.encodeURI(key) + '=' + Utils.encodeURI(Utils.str(v)) + '&';
+        Syntax.code('}'); // for end
+
+        if (str.length == 0)
+            return "";
+        else
+            return str.substring(0, str.length-1);
     }
 }
