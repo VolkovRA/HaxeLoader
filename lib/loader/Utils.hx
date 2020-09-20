@@ -9,34 +9,6 @@ import js.Syntax;
 class Utils
 {
     /**
-     * Таблица символов, используемых при генерации *boundary*.
-     */
-    static private var boundaryChars = [
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
-        'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-        'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
-        'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
-    ];
-
-    /**
-     * Получить новый разделитель тела для HTTP сообщений. (boundary)  
-     * Это используется для отправки составных сущностей, форм, которые
-     * могут содержать не только текстовые, но и бинарные данные.
-     * @return Новенький, случайный boundary!
-     * @see Документация: https://developer.mozilla.org/ru/docs/Web/HTTP/%D0%97%D0%B0%D0%B3%D0%BE%D0%BB%D0%BE%D0%B2%D0%BA%D0%B8/Content-Type
-     */
-    static public function createBoundary():String {
-        var len:Int = Math.floor(Math.random() * 15 + 15);
-        var len2:Int = boundaryChars.length;
-        var arr:Array<String> = createArray(len);
-        var i = 0;
-        while (i < len)
-            arr[i++] = boundaryChars[Math.floor(Math.random() * len2)];
-
-        return "---------------" + arr.join("");
-    }
-
-    /**
      * Строговое равенство. (`===`).  
      * Возможность использовать в Haxe чуть более быстрое сравнение JavaScript без авто-приведения типов.
      * Генерирует оптимальный JS код и встраивается в точку вызова.
@@ -61,14 +33,25 @@ class Utils
     }
 
     /**
-     * Закодировать URL адрес безопасными символами.  
-     * Функция представляет собою нативный вызов JS: `encodeURI()`.
-     * @param v Небезопасный URL Адрес.
-     * @return Безопасный URL Адрес.
-     * @see encodeURI() https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURI
+     * Закодировать строку при помощи нативного вызова: `encodeURI()`  
+     * Экранирует некоторые небезопасные символы в строке, но не все.
+     * @param v Строка.
+     * @return Экранированная строка.
+     * @see Документация: https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/encodeURI
      */
     static public inline function encodeURI(v:String):String {
        return Syntax.code('encodeURI({0})', v); 
+    }
+
+    /**
+     * Закодировать строку при помощи нативного вызова: `encodeURIComponent()`  
+     * Экранирует все небезопасные символы в строке.
+     * @param v Строка.
+     * @return Экранированная строка.
+     * @see Документация: https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
+     */
+    static public inline function encodeURIComponent(v:String):String {
+        return Syntax.code('encodeURIComponent({0})', v); 
     }
     
     /**
@@ -79,17 +62,6 @@ class Utils
      */
     static public inline function str(v:Dynamic):String {
         return Syntax.code("({0} + '')", v);
-    }
-
-    /**
-     * Раскодировать URL адрес, закодированный ранее при помощи: `encodeURI()`  
-     * Функция представляет собою нативный вызов JS: `decodeURI()`
-     * @param v Закодированный URL Адрес.
-     * @return Раскодированный URL Адрес.
-     * @see decodeURI() https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/decodeURI
-     */
-    static public inline function decodeURI(v:String):String {
-        return Syntax.code('decodeURI({0})', v); 
     }
 
     /**

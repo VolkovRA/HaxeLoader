@@ -1,5 +1,6 @@
 package loader.nodejs;
 
+import haxe.DynamicAccess;
 import js.Syntax;
 import js.lib.Error;
 import js.node.Buffer;
@@ -8,13 +9,13 @@ import js.node.Https;
 import js.node.http.ClientRequest;
 import js.node.http.IncomingMessage;
 import js.node.url.URL;
-import haxe.DynamicAccess;
 import loader.DataFormat;
 import loader.Global;
 import loader.Header;
 import loader.ILoader;
 import loader.Method;
 import loader.Request;
+import loader.parser.XWWWForm;
 
 /**
  * Реализация загрузчика для NodeJS.
@@ -92,64 +93,61 @@ class LoaderNodeJS implements ILoader
         // Разное:
         var url = new URL(req.url);
         var isHttps = url.protocol == "https:";
-        var port = Utils.parseInt(url.port, 10);
+        var port = Utils.parseInt(url.port, 10); // Может быть NaN!
 
         // Заголовки:
-        var sendHeaders:DynamicAccess<String> = new DynamicAccess();
+        var headers:DynamicAccess<String> = new DynamicAccess();
         if (req.headers != null) {
-            for (header in req.headers)
-                sendHeaders[header.name.toLowerCase()] = header.value.toLowerCase();
+            var i = 0;
+            while (i < req.headers.length) {
+                var header = req.headers[i++];
+                headers[header.name.toLowerCase()] = header.value.toLowerCase();
+            }
         }
 
-        // Подготовка тела запроса:
-        var body:Dynamic = null;    // <-- Должно быть строкою ИЛИ буфером!
-        var bodyOK:Bool = false;    // <-- Оригинальное тело данных БЫЛО изменено!
-        if (req.method == Method.GET) {
-            if (req.data != null) {
+        // Отправляемые данные:
+        var isGet = req.method == Method.GET;
+        var isBodyModified = false;
+        var body:Dynamic = null;
+        if (req.data != null) {
+            if (req.contentType == null || req.contentType.indexOf("application/x-www-form-urlencoded") != -1) {
                 if (Utils.isString(req.data)) {
-                    bodyOK = true;
-                    body = Utils.encodeURI(req.data);
+                    isBodyModified = false;
+                    body = null;
                 }
                 else if (Buffer.isBuffer(req.data)) {
-                    bodyOK = true;
-                    body = Utils.encodeURI(req.data.toString());
+                    isBodyModified = true;
+                    body = XWWWForm.encode(req.data);
                 }
                 else if (Utils.isObject(req.data)) {
-                    bodyOK = true;
-                    body = getBodyXWWW(req.data);
+                    isBodyModified = true;
+                    body = XWWWForm.write(req.data);
                 }
                 else {
-                    bodyOK = true;
-                    body = Utils.encodeURI(Utils.str(req.data));
+                    isBodyModified = true;
+                    body = XWWWForm.encode(Utils.str(req.data));
                 }
-            }
-        }
-        else {
-            var bodyType:Header = null;
-            if (Utils.isString(req.data)) {
-                bodyOK = false;
-                bodyType = { name:"content-type", value:"text/plain" };
-            }
-            else if (Buffer.isBuffer(req.data)) {
-                bodyOK = false;
-                bodyType = { name:"content-type", value:"application/octet-stream" };
-            }
-            else if (Utils.isObject(req.data)) {
-                bodyOK = true;
-                body = getBodyXWWW(req.data);
-                bodyType = { name:"content-type", value:"application/x-www-form-urlencoded" };
+
+                headers["content-type"] = "application/x-www-form-urlencoded";
+                headers["content-length"] = Utils.str(Buffer.byteLength(isBodyModified?body:req.data));
             }
             else {
-                bodyOK = true;
-                body = Utils.str(req.data);
-                bodyType = { name:"content-type", value:"text/plain" };
-            }
+                if (Utils.isString(req.data)) {
+                    isBodyModified = false;
+                    body = null;
+                }
+                else if (Buffer.isBuffer(req.data)) {
+                    isBodyModified = false;
+                    body = null;
+                }
+                else {
+                    isBodyModified = true;
+                    body = Utils.str(req.data);
+                }
 
-            // Заголовки: (Если пользователь не передал свои)
-            if (sendHeaders[bodyType.name] == null)
-                sendHeaders[bodyType.name] = bodyType.value;
-            if (sendHeaders["content-length"] == null)
-                sendHeaders["content-length"] = Utils.str(Buffer.byteLength(bodyOK?body:req.data));
+                headers["content-type"] = req.contentType;
+                headers["content-length"] = Utils.str(Buffer.byteLength(isBodyModified?body:req.data));
+            }
         }
 
         // Опций запроса:
@@ -157,16 +155,19 @@ class LoaderNodeJS implements ILoader
             protocol:   url.protocol,
             hostname:   url.hostname,
             method:     untyped req.method,
-            headers:    sendHeaders,
-            path:       url.pathname,
+            headers:    headers,
+            path:       url.search==""?url.pathname:(url.pathname+url.search),
             family:     4,
-            port:       port>0?port:(isHttps?443:80)
+            port:       port>0?port:(isHttps?443:80),
         }
 
         // Параметры для GET запроса:
-        if (req.method == Method.GET && req.data != null)
-            options.path += "?" + body; // <-- Не может быть null при этих условиях
-            //options.path += "?" + bodyOK?body:req.data;
+        if (isGet && req.data != null) {
+            if (isBodyModified)
+                options.path += (options.path.indexOf('?')==-1?("?"+body):("&"+body));
+            else
+                options.path += (options.path.indexOf('?')==-1?("?"+req.data):("&"+req.data));
+        }
 
         // Создаём запрос:
         if (isHttps)
@@ -179,10 +180,10 @@ class LoaderNodeJS implements ILoader
         cr.addListener("close", onRequestClose);
 
         // Отправляем:
-        if (req.method != Method.GET && req.data != null)
-            cr.end(bodyOK?body:req.data);
-        else
+        if (req.data == null || isGet)
             cr.end();
+        else
+            cr.end(isBodyModified?body:req.data);
         req = null;
     }
 
@@ -318,31 +319,5 @@ class LoaderNodeJS implements ILoader
     @:keep
     public function toString():String {
         return "[LoaderNodeJS status=" + status + " bytesLoaded=" + bytesLoaded + " bytesTotal=" + bytesTotal + "]";
-    }
-
-    /**
-     * Получить тело запроса в формате: `Content-Type: application/x-www-form-urlencoded`  
-     * На вход ожидается простой объект с перечисляемыми свойствами.  
-     * На выходе формируется содержимое объекта с парами: ключ-значение. (`say=Hi&to=Mom`)
-     * @param obj Объект с данными.
-     * @return Тело отправляемого запроса.
-     * @see Документация: https://developer.mozilla.org/ru/docs/Web/HTTP/Methods/POST
-     */
-    static private function getBodyXWWW(obj:Dynamic):String {
-        var str:String = "";
-        var key:Dynamic = null;
-        var v:Dynamic = null;
-        Syntax.code('for({0} in {1}) {', key, obj); // for in
-            v = obj[key];
-            if (v == null)
-                str += Utils.encodeURI(key) + '&';
-            else
-                str += Utils.encodeURI(key) + '=' + Utils.encodeURI(Utils.str(v)) + '&';
-        Syntax.code('}'); // for end
-
-        if (str.length == 0)
-            return "";
-        else
-            return str.substring(0, str.length-1);
     }
 }
