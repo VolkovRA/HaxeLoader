@@ -1,0 +1,21 @@
+# Общие параметры:
+-lib hxnodejs
+--class-path lib 
+--class-path test 
+--each
+
+# Тест XHRRequest:
+-main TestXHR
+-js "bin/js/index_xhr.js"
+
+--next
+
+# Тест JSONP:
+-main TestJSONP
+-js "bin/js/index_jsonp.js"
+
+--next
+
+# Тест NodeJS:
+-main TestNodeJS
+-js "bin/js/index_node.js"

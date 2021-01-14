@@ -1,1 +1,6 @@
-/bin/index.js
+/bin/js/index_jsonp.js
+/bin/js/index_jsonp.js.map
+/bin/js/index_node.js
+/bin/js/index_node.js.map
+/bin/js/index_xhr.js
+/bin/js/index_xhr.js.map

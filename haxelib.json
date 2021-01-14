@@ -2,10 +2,12 @@
     "name": "loader",
     "url": "https://github.com/VolkovRA/HaxeLoader/blob/master/README.md",
     "license": "MIT",
-    "tags": ["web", "ajax", "http", "https", "url", "request", "nodejs"],
-    "description": "HTTP/S Client for nodejs and browser",
-    "version": "1.2.0",
-    "releasenote": "Release",
+    "tags": ["web", "node", "http", "https", "ajax", "fetch", "jsonp", "xhr"],
+    "description": "Унифицированный интерфейс для выполнения HTTP/S запросов",
+    "version": "2.0.0",
     "contributors": ["VolkovRA"],
-    "classPath": "lib"
+    "classPath": "lib",
+    "dependencies" : {
+		"tools": "git:https://github.com/VolkovRA/HaxeTools.git"
+	}
 }
