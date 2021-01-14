@@ -75,13 +75,6 @@ interface ILoader
      */
     public function getHeaders():Array<Header>;
 
-    /**
-     * Получить строковое представление загрузчика.
-     * @return Строковое представление загрузчика.
-     */
-    @:keep
-    public function toString():String;
-
 
 
     //////////////////

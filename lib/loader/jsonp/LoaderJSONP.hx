@@ -181,11 +181,6 @@ class LoaderJSONP implements ILoader
         return null;
     }
 
-    @:keep
-    public function toString():String {
-        return "[LoaderJSONP complete=" + (Utils.eq(state,LoaderState.COMPLETE)?"true":"false") + "]";
-    }
-
     // ЛИСТЕНЕРЫ
     /**
      * Колбек получения данных.

@@ -315,9 +315,4 @@ class LoaderNodeJS implements ILoader
         
         return 0;
     }
-
-    @:keep
-    public function toString():String {
-        return "[LoaderNodeJS status=" + status + " bytesLoaded=" + bytesLoaded + " bytesTotal=" + bytesTotal + "]";
-    }
 }

@@ -101,13 +101,4 @@ class Request
      * По умолчанию: `application/x-www-form-urlencoded`.
      */
     public var contentType:String = "application/x-www-form-urlencoded";
-
-    /**
-     * Получить строковое представление запроса.
-     * @return Возвращает строковое представление объекта.
-     */
-    @:keep
-    public function toString():String {
-        return "[Request " + method + " " + url + "]";
-    }
 }

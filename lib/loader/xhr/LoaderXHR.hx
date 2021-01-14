@@ -215,11 +215,6 @@ class LoaderXHR implements ILoader
         return res;
     }
 
-    @:keep
-    public function toString():String {
-        return "[LoaderXHR status=" + status + " bytesLoaded=" + bytesLoaded + " bytesTotal=" + bytesTotal + "]";
-    }
-
     // ЛИСТЕНЕРЫ
     private function onXhrReadyStateChange():Void {
         if (xhr.status > 0 && status == 0) {

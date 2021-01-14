@@ -263,13 +263,4 @@ class Balancer
             i ++;
         }
     }
-
-    /**
-     * Получить строковое представление балансера.
-     * @return Возвращает строковое представление объекта.
-     */
-    @:keep
-    public function toString():String {
-        return "[Balancer length=" + length + " rps=" + rps + "]";
-    }
 }
