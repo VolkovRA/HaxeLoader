@@ -16,6 +16,7 @@ import loader.ILoader;
 import loader.Method;
 import loader.Request;
 import loader.parser.XWWWForm;
+import tools.NativeJS;
 
 /**
  * Реализация загрузчика для NodeJS.
@@ -47,14 +48,14 @@ class LoaderNodeJS implements ILoader
     /**
      * Создать загрузчик.
      */
-    public function new() {
+    public function new () {
     }
     
     public function load(request:Request):Void {
 
         // Новый запрос
         // Объект в изначальное состояние: (Без изменения настроек)
-        if (Utils.noeq(state, LoaderState.READY)) {
+        if (state != LoaderState.READY) {
             close();
 
             status          = 0;
@@ -93,7 +94,7 @@ class LoaderNodeJS implements ILoader
         // Разное:
         var url = new URL(req.url);
         var isHttps = url.protocol == "https:";
-        var port = Utils.parseInt(url.port, 10); // Может быть NaN!
+        var port = NativeJS.parseInt(url.port); // Может быть NaN!
 
         // Заголовки:
         var headers:DynamicAccess<String> = new DynamicAccess();
@@ -111,7 +112,7 @@ class LoaderNodeJS implements ILoader
         var body:Dynamic = null;
         if (req.data != null) {
             if (req.contentType == null || req.contentType.indexOf("application/x-www-form-urlencoded") != -1) {
-                if (Utils.isString(req.data)) {
+                if (NativeJS.isStr(req.data)) {
                     isBodyModified = false;
                     body = null;
                 }
@@ -119,20 +120,20 @@ class LoaderNodeJS implements ILoader
                     isBodyModified = true;
                     body = XWWWForm.encode(req.data);
                 }
-                else if (Utils.isObject(req.data)) {
+                else if (NativeJS.isObj(req.data)) {
                     isBodyModified = true;
                     body = XWWWForm.write(req.data);
                 }
                 else {
                     isBodyModified = true;
-                    body = XWWWForm.encode(Utils.str(req.data));
+                    body = XWWWForm.encode(NativeJS.str(req.data));
                 }
 
                 headers["content-type"] = "application/x-www-form-urlencoded";
-                headers["content-length"] = Utils.str(Buffer.byteLength(isBodyModified?body:req.data));
+                headers["content-length"] = NativeJS.str(Buffer.byteLength(isBodyModified?body:req.data));
             }
             else {
-                if (Utils.isString(req.data)) {
+                if (NativeJS.isStr(req.data)) {
                     isBodyModified = false;
                     body = null;
                 }
@@ -142,11 +143,11 @@ class LoaderNodeJS implements ILoader
                 }
                 else {
                     isBodyModified = true;
-                    body = Utils.str(req.data);
+                    body = NativeJS.str(req.data);
                 }
 
                 headers["content-type"] = req.contentType;
-                headers["content-length"] = Utils.str(Buffer.byteLength(isBodyModified?body:req.data));
+                headers["content-length"] = NativeJS.str(Buffer.byteLength(isBodyModified?body:req.data));
             }
         }
 
@@ -188,7 +189,7 @@ class LoaderNodeJS implements ILoader
     }
 
     function set_balancer(value:Balancer):Balancer {
-        if (Utils.eq(value, balancer))
+        if (value == balancer)
             return value;
         
         close();
@@ -197,9 +198,9 @@ class LoaderNodeJS implements ILoader
     }
 
     public function close():Void {
-        if (Utils.eq(state, LoaderState.COMPLETE))
+        if (state == LoaderState.COMPLETE)
             return;
-        if (Utils.eq(state, LoaderState.PENDING) && balancer != null)
+        if (state == LoaderState.PENDING && balancer != null)
             balancer.remove(this);
         if (cr != null) {
             cr.removeListener("error", onRequestError);
@@ -263,7 +264,7 @@ class LoaderNodeJS implements ILoader
     }
 
     private function onRequestData(data:Buffer):Void { // Получение данных
-        if (Utils.eq(buffer, null))
+        if (buffer == null)
             buffer = new Array();
 
         buffer.push(data);
@@ -279,10 +280,10 @@ class LoaderNodeJS implements ILoader
 
     private function onRequestClose():Void { // Завершение сеанса
         if (buffer != null) {
-            if (Utils.eq(dataFormat, DataFormat.BINARY)) {
+            if (dataFormat == DataFormat.BINARY) {
                 data = Buffer.concat(buffer);
             }
-            else if (Utils.eq(dataFormat, DataFormat.JSON)) {
+            else if (dataFormat == DataFormat.JSON) {
                 try {
                     data = Global.JSON.parse(Buffer.concat(buffer).toString());
                 }
@@ -310,7 +311,7 @@ class LoaderNodeJS implements ILoader
         
         for (header in headers) {
             if (header.name == "content-length") // API Ноды возвращает заголовки в lowerCase.
-                return Utils.parseInt(header.value, 10);
+                return NativeJS.parseInt(header.value);
         }
         
         return 0;

@@ -1,5 +1,7 @@
 package;
 
+import loader.jsonp.LoaderJSONP;
+
 /**
  * Тест JSONP загрузчика.
  */

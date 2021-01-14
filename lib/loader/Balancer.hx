@@ -1,5 +1,6 @@
 package loader;
 
+import tools.NativeJS;
 import loader.Global;
 
 /**
@@ -44,21 +45,21 @@ class Balancer
     public var rps(default, set):Float;
     function set_rps(value:Float):Float {
         if (value > 0) {
-            if (Utils.eq(value, rps))
+            if (value == rps)
                 return value;
 
             rps = value;
 
-            if (Utils.eq(interval, null) && length > 0)
+            if (interval == null && length > 0)
                 interval = Global.setInterval(onUpdate, INTERVAL_UPDATE, this);
         }
         else {
-            if (Utils.eq(rps, 0))
+            if (rps == 0)
                 return value;
 
             rps = 0;
 
-            if (Utils.noeq(interval, null)) {
+            if (interval != null) {
                 Global.clearInterval(interval);
                 interval = null;
             }
@@ -84,8 +85,8 @@ class Balancer
 
         // Обновление
         // Выключаем обновление, если загрузчиков больше нет:
-        if (Utils.eq(b.length, 0)) {
-            if (Utils.noeq(b.interval, null)) {
+        if (b.length == 0) {
+            if (b.interval != null) {
                 Global.clearInterval(b.interval);
                 b.interval = null;
             }
@@ -94,7 +95,7 @@ class Balancer
 
         // Метод гарантированно не вызовется, если rps <= 0:
         var t = 1000 / b.rps;         // Время на 1 запрос. (mc)
-        var ct = Utils.stamp();     // Текущее время. (mc)
+        var ct = NativeJS.now();      // Текущее время. (mc)
         var dt = ct - b.time;         // Реально прошедшее время с момента последнего запроса. (mc)
 
         // Времени прошло слишком мало даже для выполнения 1 запроса:
@@ -126,7 +127,7 @@ class Balancer
         var i = 0;
         var j = 0;
         while (i < len) {
-            if (Utils.eq(b.loaders[i], null)) {
+            if (b.loaders[i] == null) {
                 i ++;
                 continue;
             }
@@ -135,12 +136,12 @@ class Balancer
             i ++;
             j ++;
         }
-        if (Utils.noeq(i,j))
+        if (i != j)
             b.loaders.resize(j);
         b.loaders.sort(compare);
 
         // Забираем из списка отправляемые элементы: (При отправке список может измениться!)
-        var arr:Array<ILoader> = Utils.createArray(num);
+        var arr:Array<ILoader> = NativeJS.array(num);
         i = num;
         while (i-- > 0) {
             arr[i] = b.loaders[i];
@@ -150,7 +151,7 @@ class Balancer
 
         // Безопасно инициируем запросы:
         while (num-- > 0) {
-            if (Utils.eq(arr[num].state, LoaderState.PENDING) && Utils.eq(arr[num].balancer, b))
+            if (arr[num].state == LoaderState.PENDING && arr[num].balancer == b)
                 arr[num].loadStart();
         }
     }
@@ -176,11 +177,11 @@ class Balancer
         var len = arr.length;
 
         loaders = new Array(); // <-- Список может измениться из-за вызова колбеков
-        time = Utils.stamp();
+        time = NativeJS.now();
         length = 0;
 
         // Обновления не нужны:
-        if (Utils.noeq(interval, null)) {
+        if (interval != null) {
             Global.clearInterval(interval);
             interval = null;
         }
@@ -188,7 +189,7 @@ class Balancer
         // Безопасно инициируем запросы:
         while (i < len) {
             var l = arr[i++];
-            if (Utils.noeq(l, null) && Utils.eq(l.state, LoaderState.PENDING) && Utils.eq(l.balancer, this))
+            if (l != null && l.state == LoaderState.PENDING && l.balancer == this)
                 l.loadStart();
         }
     }
@@ -208,7 +209,7 @@ class Balancer
         length = 0;
 
         // Обновления не нужны:
-        if (Utils.noeq(interval, null)) {
+        if (interval != null) {
             Global.clearInterval(interval);
             interval = null;
         }
@@ -216,7 +217,7 @@ class Balancer
         // Безопасно закрываем очередь:
         while (i < len) {
             var l = arr[i++];
-            if (Utils.eq(l, null) || Utils.noeq(l.state, LoaderState.PENDING))
+            if (l == null || l.state != LoaderState.PENDING)
                 continue;
 
             l.close();
@@ -239,7 +240,7 @@ class Balancer
         length ++;
         loaders.push(loader);
         
-        if (Utils.eq(interval, null) && rps > 0)
+        if (interval == null && rps > 0)
             interval = Global.setInterval(onUpdate, INTERVAL_UPDATE, this);
     }
 
@@ -254,7 +255,7 @@ class Balancer
         var i = 0;
         var len = loaders.length;
         while (i < len) {
-            if (Utils.eq(loaders[i], loader)) {
+            if (loaders[i] == loader) {
                 length --;
                 loaders[i] = null; // <-- Список перестроится при следующем обновлении.
                 return;

@@ -11,6 +11,7 @@ import loader.LoaderState;
 import loader.Header;
 import loader.Method;
 import loader.Request;
+import tools.NativeJS;
 
 /**
  * Реализация загрузчика на основе браузерного: `XmlHttpRequest`.
@@ -47,7 +48,7 @@ class LoaderXHR implements ILoader
 
         // Новый запрос
         // Объект в изначальное состояние: (Без изменения настроек)
-        if (Utils.noeq(state, LoaderState.READY)) {
+        if (state != LoaderState.READY) {
             close();
 
             status          = 0;
@@ -84,14 +85,14 @@ class LoaderXHR implements ILoader
         xhr     = Browser.createXMLHttpRequest();
         
         // Тип запроса:
-        if (Utils.eq(req.method, Method.GET)) {
+        if (req.method == Method.GET) {
             if (req.data == null)
-                xhr.open(Method.GET, Utils.encodeURI(req.url), true);
+                xhr.open(Method.GET, StringTools.urlEncode(req.url), true);
             else
-                xhr.open(Method.GET, Utils.encodeURI(req.url + "?" + Utils.str(req.data)), true);
+                xhr.open(Method.GET, StringTools.urlEncode(req.url + "?" + NativeJS.str(req.data)), true);
         }
-        else if (Utils.eq(req.method, Method.POST)) {
-            xhr.open(Method.POST, Utils.encodeURI(req.url), true);
+        else if (req.method == Method.POST) {
+            xhr.open(Method.POST, StringTools.urlEncode(req.url), true);
         }
         else {
             close();
@@ -109,11 +110,11 @@ class LoaderXHR implements ILoader
         }
 
         // Формат данных:
-        if (Utils.eq(dataFormat, DataFormat.TEXT))
+        if (dataFormat == DataFormat.TEXT)
             xhr.responseType = XMLHttpRequestResponseType.TEXT;
-        else if (Utils.eq(dataFormat, DataFormat.BINARY))
+        else if (dataFormat == DataFormat.BINARY)
             xhr.responseType = XMLHttpRequestResponseType.ARRAYBUFFER;
-        else if (Utils.eq(dataFormat, DataFormat.JSON))
+        else if (dataFormat == DataFormat.JSON)
             xhr.responseType = XMLHttpRequestResponseType.JSON;
         else {
             close();
@@ -139,7 +140,7 @@ class LoaderXHR implements ILoader
     }
 
     function set_balancer(value:Balancer):Balancer {
-        if (Utils.eq(value, balancer))
+        if (value == balancer)
             return value;
         
         close();
@@ -148,11 +149,11 @@ class LoaderXHR implements ILoader
     }
 
     public function close():Void {
-        if (Utils.eq(state, LoaderState.COMPLETE))
+        if (state == LoaderState.COMPLETE)
             return;
-        if (Utils.eq(state, LoaderState.PENDING) && balancer != null)
+        if (state == LoaderState.PENDING && balancer != null)
             balancer.remove(this);
-        if (Utils.noeq(xhr, null)) {
+        if (xhr != null) {
             xhr.onreadystatechange  = null;
             xhr.onabort             = null;
             xhr.ontimeout           = null;
@@ -191,7 +192,7 @@ class LoaderXHR implements ILoader
     }
 
     public function getHeaders():Array<Header> {
-        if (Utils.eq(xhr, null))
+        if (xhr == null)
             return null;
 
         var str = xhr.getAllResponseHeaders();
@@ -199,7 +200,7 @@ class LoaderXHR implements ILoader
             return null;
 
         var arr = str.split("\r\n");
-        if (Utils.eq(arr.length, 0))
+        if (arr.length == 0)
             return null;
 
         var res = new Array<Header>();
@@ -209,7 +210,7 @@ class LoaderXHR implements ILoader
                 res.push({ name:arr2[0], value:arr2[1] });
         }
 
-        if (Utils.eq(res.length, 0))
+        if (res.length == 0)
             return null;
 
         return res;
@@ -225,7 +226,7 @@ class LoaderXHR implements ILoader
     }
 
     private function onXhrAbort():Void {
-        var c = Utils.eq(state, LoaderState.LOAD);
+        var c = state==LoaderState.LOAD;
         error = new Error("Request has been canceled");
 
         close();
@@ -234,7 +235,7 @@ class LoaderXHR implements ILoader
     }
 
     private function onXhrTimeout():Void {
-        var c = Utils.eq(state, LoaderState.LOAD);
+        var c = state==LoaderState.LOAD;
         error = new Error("Request is timeout");
 
         close();
@@ -243,7 +244,7 @@ class LoaderXHR implements ILoader
     }
 
     private function onXhrError(e:ProgressEvent):Void {
-        var c = Utils.eq(state, LoaderState.LOAD);
+        var c = state==LoaderState.LOAD;
         error = new Error("Request error");
 
         close();
@@ -260,7 +261,7 @@ class LoaderXHR implements ILoader
     }
 
     private function onXhrLoadEnd():Void {
-        var c = Utils.eq(state, LoaderState.LOAD);
+        var c = state==LoaderState.LOAD;
         data = xhr.response;
         if (status >= 400)
             error = new Error(xhr.responseURL + " replied " + status);

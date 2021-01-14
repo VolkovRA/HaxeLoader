@@ -1,5 +1,7 @@
 package;
 
+import loader.nodejs.LoaderNodeJS;
+
 /**
  * Тест nodejs загрузчика.
  */

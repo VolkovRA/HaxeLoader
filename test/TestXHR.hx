@@ -1,5 +1,7 @@
 package;
 
+import loader.xhr.LoaderXHR;
+
 /**
  * Тест XHR загрузчика.
  */

@@ -10,6 +10,7 @@ import loader.LoaderState;
 import loader.Header;
 import loader.Method;
 import loader.Request;
+import tools.NativeJS;
 
 /**
  * Реализация загрузчика на основе протокола: `JSONP`.
@@ -60,7 +61,7 @@ class LoaderJSONP implements ILoader
         
         // Новый запрос
         // Объект в изначальное состояние: (Без изменения настроек)
-        if (Utils.noeq(state, LoaderState.READY)) {
+        if (state != LoaderState.READY) {
             close();
             
             status          = 0;
@@ -111,8 +112,8 @@ class LoaderJSONP implements ILoader
         tag.addEventListener("error", onError);
 
         // Тип запроса:
-        if (Utils.eq(req.method, Method.GET)) {
-            tag.src = Utils.encodeURI(req.url + "?" + Utils.str(req.data) + "&callback=activeLoadingJSONP[" + id + "].onData");
+        if (req.method == Method.GET) {
+            tag.src = StringTools.urlEncode(req.url + "?" + NativeJS.str(req.data) + "&callback=activeLoadingJSONP[" + id + "].onData");
         }
         else {
             close();
@@ -130,7 +131,7 @@ class LoaderJSONP implements ILoader
     }
 
     function set_balancer(value:Balancer):Balancer {
-        if (Utils.eq(value, balancer))
+        if (value == balancer)
             return value;
         
         close();
@@ -139,19 +140,19 @@ class LoaderJSONP implements ILoader
     }
 
     public function close():Void {
-        if (Utils.eq(state, LoaderState.COMPLETE))
+        if (state == LoaderState.COMPLETE)
             return;
-        if (Utils.eq(state, LoaderState.PENDING) && balancer != null)
+        if (state == LoaderState.PENDING && balancer != null)
             balancer.remove(this);
 
-        if (Utils.noeq(tag, null)) {
+        if (tag != null) {
             tag.removeEventListener("load", onLoad);
             tag.removeEventListener("error", onError);
 
             if (tag.parentNode == Browser.document.head)
                 Browser.document.head.removeChild(tag);
 
-            Utils.delete(untyped loaders[id]);
+            NativeJS.delete(loaders, id);
             tag.src = null;
             tag = null;
         }

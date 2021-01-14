@@ -1,5 +1,6 @@
 # Общие параметры:
 -lib hxnodejs
+-lib tools
 --class-path lib 
 --class-path test 
 --each
