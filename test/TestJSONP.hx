@@ -1,9 +1,9 @@
 package;
 
-import loader.Method;
-import loader.ILoader;
-import loader.Request;
-import loader.jsonp.LoaderJSONP;
+//import loader.Method;
+//import loader.ILoader;
+//import loader.Request;
+//import loader.jsonp.LoaderJSONP;
 
 /**
  * Тест JSONP загрузчика.

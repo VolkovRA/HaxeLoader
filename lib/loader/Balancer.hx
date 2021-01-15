@@ -4,10 +4,7 @@ import tools.NativeJS;
 
 /**
  * Балансировщик нагрузки. 🚦  
- * Используется для ограничения количества отправляемых
- * запросов в единицу времени. Запросы встают в очередь
- * и отправляются позже, если их количество начинает
- * превышать заданные лимиты.
+ * Ограничивает отправку запросов до заданного лимита.
  * 
  * Способ применения:
  * 1. Создать экземпляр: `Balancer`, настроить
@@ -40,7 +37,7 @@ class Balancer
      * балансировщика на предмет запуска новых запросов
      * из его очереди.
      */
-    inline static private var INTERVAL_UPDATE:Int = 100;
+    inline static private var INTERVAL_TIME:Int = 100;
 
     // Приват
     private var arr:Array<ILoader> = [];
@@ -71,7 +68,7 @@ class Balancer
                 return value;
             rps = value;
             if (len > 0 && id == null)
-                id = untyped setInterval(onUpdate, INTERVAL_UPDATE);
+                id = untyped setInterval(onUpdate, INTERVAL_TIME);
         }
         else {
             if (rps == 0)
@@ -121,7 +118,7 @@ class Balancer
             return;
 
         // Максимально прошедшее время для 1 тика: (Чтоб не было скачка запросов)
-        var mt = Math.max(t+INTERVAL_UPDATE, INTERVAL_UPDATE*2);
+        var mt = Math.max(t+INTERVAL_TIME, INTERVAL_TIME*2);
         var num = 0; // <-- Количество отправляемых запросов
         if (dt > mt) {
             // Скачок прошедшего времени:
@@ -256,7 +253,7 @@ class Balancer
     private function add(loader:ILoader):Void {
         arr.push(loader);
         if (rps > 0 && id == null)
-            id = untyped setInterval(onUpdate, INTERVAL_UPDATE);
+            id = untyped setInterval(onUpdate, INTERVAL_TIME);
     }
 
     /**

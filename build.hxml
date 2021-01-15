@@ -1,5 +1,5 @@
 # Общие параметры:
--lib hxnodejs
+#-lib hxnodejs
 -lib tools
 --class-path lib 
 --class-path test 
@@ -18,5 +18,6 @@
 --next
 
 # Тест NodeJS:
+-lib hxnodejs
 -main TestNodeJS
 -js "bin/js/index_node.js"

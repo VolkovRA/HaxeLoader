@@ -1,9 +1,9 @@
 package;
 
-import loader.Method;
-import loader.ILoader;
-import loader.Request;
-import loader.nodejs.LoaderNodeJS;
+//import loader.Method;
+//import loader.ILoader;
+//import loader.Request;
+//import loader.nodejs.LoaderNodeJS;
 
 /**
  * Тест nodejs загрузчика.

@@ -11,8 +11,8 @@
                 "isDefault": true
             },
             "dependsOn": [
-                "compile debug",
-                //"compile release",
+                //"compile debug",
+                "compile release",
 
                 "run node",
             ],

@@ -3,7 +3,7 @@ package loader;
 /**
  * Состояние загрузчика.  
  * Перечисление всех состояний, в которых может
- * находиться загрузчик `ILoader`.
+ * находиться загрузчик: `ILoader`
  */
 @:dce
 enum abstract LoaderState(Int) to Int from Int
