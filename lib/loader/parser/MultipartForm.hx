@@ -1,7 +1,7 @@
 package loader.parser;
 
-import js.Syntax;
 import js.lib.Error;
+import tools.NativeJS;
 
 #if nodejs
 import js.node.Buffer;
@@ -65,7 +65,7 @@ class MultipartForm
         #if nodejs
         // NodeJS:
         var len:Int = items==null?0:items.length;
-        var arr:Array<Buffer> = Utils.createArray(len);
+        var arr:Array<Buffer> = NativeJS.array(len);
         var i:Int = 0;
         while (i < len) {
             var item = items[i];
@@ -81,7 +81,7 @@ class MultipartForm
                     (item.contentType==null?'':('\r\nContent-Type: ' + item.contentType)) +
                     '\r\n\r\n'
                 ),
-                Buffer.isBuffer(item.data)?item.data:Buffer.from(Utils.str(item.data)),
+                Buffer.isBuffer(item.data)?item.data:Buffer.from(NativeJS.str(item.data)),
             ]);
         }
         if (arr.length != 0)
@@ -112,11 +112,10 @@ class MultipartForm
     static public function getBoundary():String {
         var len:Int = Math.floor(Math.random() * 15 + 15);
         var len2:Int = boundaryChars.length;
-        var arr:Array<String> = Utils.createArray(len);
+        var arr:Array<String> = NativeJS.array(len);
         var i = 0;
         while (i < len)
             arr[i++] = boundaryChars[Math.floor(Math.random() * len2)];
-
         return "-------" + arr.join("");
     }
 
