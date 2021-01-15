@@ -13,9 +13,10 @@ import loader.Request;
 import tools.NativeJS;
 
 /**
- * Реализация загрузчика на основе протокола: `JSONP`.
+ * Реализация загрузчика на основе протокола: `JSONP`
  * - Работает только в браузере.
- * - Раздел `<head>` в DOM должен быть загружен для добавления в него тегов `<script>`.
+ * - Раздел `<head>` в DOM должен быть загружен для
+ *   добавления в него тегов: `<script>`
  * - Поддерживаются только `GET` запросы.
  * - Заголовки никакие не поддерживаются.
  * - Колбек прогресса загрузки не поддерживается.
@@ -24,6 +25,7 @@ import tools.NativeJS;
  * 
  * @see https://ru.wikipedia.org/wiki/JSONP
  */
+@:dce
 class LoaderJSONP implements ILoader
 {
     static private var loaders:Dynamic<LoaderJSONP> = {};

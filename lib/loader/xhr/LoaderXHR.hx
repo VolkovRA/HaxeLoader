@@ -14,9 +14,11 @@ import loader.Request;
 import tools.NativeJS;
 
 /**
- * Реализация загрузчика на основе браузерного: `XmlHttpRequest`.
+ * Реализация загрузчика на основе
+ * браузерного: `XmlHttpRequest`
  * @see https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
  */
+@:dce
 class LoaderXHR implements ILoader
 {
     public var status(default, null):Int        = 0;

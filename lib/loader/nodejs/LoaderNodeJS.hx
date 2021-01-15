@@ -22,6 +22,7 @@ import tools.NativeJS;
  * Реализация загрузчика для NodeJS.
  * @see https://nodejs.org/api/http.html#http_http_request_url_options_callback
  */
+@:dce
 class LoaderNodeJS implements ILoader
 {
     public var status(default, null):Int        = 0;

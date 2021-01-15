@@ -15,12 +15,12 @@
 ```
 // Запрос в NodeJS:
 var loader:Loader = new LoaderNodeJS();
-loader.load(new Request("https://google.com"));
+loader.load({ url:"https://google.com" });
 loader.onComplete = function(loader){ trace(loader.error); trace(loader.data); };
 
 // Запрос в браузере:
 var loader:Loader = new LoaderBrowser();
-loader.load(new Request("https://google.com"));
+loader.load({ url:"https://google.com" });
 loader.onComplete = function(loader){ trace(loader.error); trace(loader.data); };
 ```
 

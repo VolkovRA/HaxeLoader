@@ -20,6 +20,7 @@ import js.node.Timers.Timeout;
 #else
 @:native("window")
 #end
+@:dce
 extern class Global
 {
     

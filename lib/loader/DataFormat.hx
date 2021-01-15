@@ -1,9 +1,12 @@
 package loader;
 
 /**
- * Формат данных.
+ * Формат данных.  
+ * Используется для указания типа принимаемых
+ * данных от удалённого сервера.
  */
-@:enum abstract DataFormat(String) to String
+@:dce
+enum abstract DataFormat(String) to String from String
 {
     /**
      * Текстовые данные.
@@ -16,7 +19,8 @@ package loader;
     var BINARY = "binary";
 
     /**
-     * JavaScript Объект, полученный в результате разбора JSON строки.
+     * JavaScript Объект, полученный в
+     * результате разбора JSON строки.
      */
     var JSON = "json";
 }
