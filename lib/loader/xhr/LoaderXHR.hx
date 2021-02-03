@@ -114,7 +114,7 @@ class LoaderXHR implements ILoader
                 var h = req.headers[i++];
                 if (h.name == null || h.name == "" || h.value == null)
                     continue;
-                headers[h.name.toLowerCase()] = h.value.toLowerCase();
+                headers[h.name.toLowerCase()] = h.value;
             }
         }
         for (k => v in headers)
@@ -246,7 +246,7 @@ class LoaderXHR implements ILoader
         for (item in arr) {
             var arr2 = item.split(": ");
             if (arr2.length >= 2)
-                res.push({ name:arr2[0].toLowerCase(), value:arr2[1].toLowerCase() });
+                res.push({ name:arr2[0].toLowerCase(), value:arr2[1] });
         }
         return res;
     }

@@ -103,7 +103,7 @@ class LoaderNodeJS implements ILoader
             var i = 0;
             while (i < req.headers.length) {
                 var header = req.headers[i++];
-                headers[header.name.toLowerCase()] = header.value.toLowerCase();
+                headers[header.name.toLowerCase()] = header.value;
             }
         }
 
